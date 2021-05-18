@@ -56,7 +56,7 @@ def delete(sno):
     return redirect("/home")
 
 if __name__=="__main__":
-    app.run(debug=False)
+    app.run(debug=False,host=0.0.0.0)
     #debug=true is given so that the error can be desplayed in the browser
     #if you want to change the recent port, put port=8000
     #debug will be true only in the development phase
