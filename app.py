@@ -1,15 +1,21 @@
+from functools import reduce
 from flask import Flask, render_template, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 #import flask_sqlalchemy
 from datetime import datetime
 
 from werkzeug.utils import html
+import sqlite3
 
 #render_template is used to render the html files in the template folder
 
 app = Flask(__name__)       #creating a flask app
 app.config['SQLALCHEMY_DATABASE_URI']= "sqlite:///project.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS']= False 
+
+
+
+
 
 db = SQLAlchemy(app)
 
@@ -34,18 +40,48 @@ def hello_world():
     alltodo=Todo.query.all()
     return render_template('index.html',alltodo=alltodo)
 #app.route is used to route to different pages
-@app.route('/signin')
-def sign_in():
-    return 'This is the sign in page!'
+@app.route('/signup', methods=['GET','POST'])
+def sign_up():
+    msg1=None
+    if(request.method=='POST'):
+        if(request.form['name']!=""  and request.form['pass']!=""):
+            username=request.form['name']
+            password=request.form['pass']
+            #connecting with the database
+            conn1 = sqlite3.connect("signup.db")
+            cursor1=conn1.cursor()
+            cursor1.execute("INSERT INTO person VALUES('{name}','{password}')".format(name=username,password=password))
+            msg1="your account is created"
+            conn1.commit()
+            conn1.close()
+            print(msg1)
+            return redirect("/")
+            print(username+"s")
+            print(password+"a")
+        else:
+            if(request.form['name']=="" or request.form['pass']==""):
+                msg1="You can't leave the fields blank"
+            else:
+                msg1="Something went wrong"    
+    return render_template('sign_up.html',msg1=msg1)
 
 @app.route('/', methods=['GET','POST'])
 def login():
+    msg2=None
     if request.method=='POST':
         name=request.form['name'] #name of the for field in the index.html
         password=request.form['pass']
-        if (name=="admin" and password=="chakka"):
-            return render_template('index.html')
-    return render_template('login.html')
+        #connecting with the database
+        conn2 = sqlite3.connect("signup.db")
+        cursor2=conn2.cursor()
+        cursor2.execute("SELECT * FROM person WHERE username=='{name}' and password=='{password}'".format(name=name,password=password))
+        r=cursor2.fetchall()
+        if (len(r)==1): 
+            return redirect("/home")
+        else:
+            msg2="Please enter a valid username and password!"
+            print(msg2)
+    return render_template('login.html',msg2=msg2)
 
 
 @app.route('/delete/<int:sno>')
@@ -56,7 +92,7 @@ def delete(sno):
     return redirect("/home")
 
 if __name__=="__main__":
-    app.run(debug=False,host=0.0.0.0)
+    app.run(debug=True, port=8000)
     #debug=true is given so that the error can be desplayed in the browser
     #if you want to change the recent port, put port=8000
     #debug will be true only in the development phase
